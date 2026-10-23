@@ -1,0 +1,403 @@
+{
+  "info": {
+    "name": "Trade Settlement & Invoice Reconciliation System",
+    "description": "REST API collection for the Trade Settlement & Invoice Reconciliation System.\n\nRun 'Auth / Login' first: the returned JWT is stored in the {{token}} collection variable and reused by every other request.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "tradeId", "value": "1" },
+    { "key": "tradeReference", "value": "" },
+    { "key": "invoiceId", "value": "1" },
+    { "key": "paymentId", "value": "1" },
+    { "key": "reconciliationId", "value": "1" },
+    { "key": "alertId", "value": "1" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "Admin@123" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "auth": { "type": "noauth" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('token returned', () => pm.expect(body.data.token).to.be.a('string'));",
+                  "pm.collectionVariables.set('token', body.data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Authenticates and stores the JWT in the {{token}} collection variable."
+          }
+        },
+        {
+          "name": "Register user (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"new.finance\",\n  \"email\": \"new.finance@example.com\",\n  \"password\": \"Finance@123\",\n  \"fullName\": \"New Finance User\",\n  \"role\": \"FINANCE\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trades",
+      "item": [
+        {
+          "name": "Create trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('tradeId', body.data.id);",
+                  "pm.collectionVariables.set('tradeReference', body.data.tradeReference);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commodity\": \"Brent Crude Oil\",\n  \"tradeType\": \"SELL\",\n  \"buyerName\": \"Shell Trading Ltd\",\n  \"sellerName\": \"BP Energy\",\n  \"quantity\": 50000.0000,\n  \"unitOfMeasure\": \"BARREL\",\n  \"unitPrice\": 82.4500,\n  \"currencyCode\": \"USD\",\n  \"tradeDate\": \"2026-01-15\",\n  \"deliveryDate\": \"2026-02-01\",\n  \"notes\": \"Spot cargo, Incoterms FOB\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/trades"
+          }
+        },
+        {
+          "name": "Search trades",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/trades?commodity=oil&page=0&size=20&sort=tradeDate,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "trades"],
+              "query": [
+                { "key": "commodity", "value": "oil" },
+                { "key": "status", "value": "COMPLETED", "disabled": true },
+                { "key": "tradeType", "value": "SELL", "disabled": true },
+                { "key": "tradeDateFrom", "value": "2026-01-01", "disabled": true },
+                { "key": "tradeDateTo", "value": "2026-12-31", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "sort", "value": "tradeDate,desc" }
+              ]
+            }
+          }
+        },
+        { "name": "Get trade by id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/trades/{{tradeId}}" } },
+        {
+          "name": "Confirm trade",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"CONFIRMED\"\n}" },
+            "url": "{{baseUrl}}/api/v1/trades/{{tradeId}}"
+          }
+        },
+        {
+          "name": "Complete trade (invoice eligible)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"COMPLETED\"\n}" },
+            "url": "{{baseUrl}}/api/v1/trades/{{tradeId}}"
+          }
+        },
+        { "name": "Get trade by reference", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/trades/reference/{{tradeReference}}" } },
+        { "name": "List invoices for trade", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/trades/{{tradeId}}/invoices" } }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "Generate invoice from trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('invoiceId', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commodityDescription\": \"Brent Crude Oil, FOB Sullom Voe\",\n  \"invoiceType\": \"RECEIVABLE\",\n  \"invoiceDate\": \"2026-01-20\",\n  \"taxPercentage\": 5.00,\n  \"additionalCharges\": 1500.00,\n  \"discountAmount\": 250.00,\n  \"notes\": \"First cargo\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/invoices/from-trade/{{tradeId}}"
+          }
+        },
+        {
+          "name": "Search invoices",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/invoices?status=ISSUED&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "invoices"],
+              "query": [
+                { "key": "invoiceNumber", "value": "", "disabled": true },
+                { "key": "tradeReference", "value": "", "disabled": true },
+                { "key": "status", "value": "ISSUED" },
+                { "key": "invoiceType", "value": "RECEIVABLE", "disabled": true },
+                { "key": "currencyCode", "value": "USD", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        { "name": "Get invoice by id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}" } },
+        { "name": "Get invoice by number", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/invoices/number/INV-2026-000001" } },
+        { "name": "Issue invoice", "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/issue" } },
+        {
+          "name": "Cancel invoice",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Raised against the wrong trade\"\n}" },
+            "url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/cancel"
+          }
+        },
+        { "name": "Get outstanding balance", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/outstanding" } },
+        { "name": "List overdue invoices", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/invoices/overdue" } },
+        { "name": "Printable invoice (text)", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/printable" } },
+        { "name": "Payment history for invoice", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/payments" } }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create payment (completed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('paymentId', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": {{invoiceId}},\n  \"paymentDate\": \"2026-01-25\",\n  \"amount\": 1000000.00,\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"transactionReference\": \"SWIFT-REF-8891A\",\n  \"status\": \"COMPLETED\",\n  \"notes\": \"Partial settlement of the first cargo\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments"
+          }
+        },
+        {
+          "name": "Create payment (pending)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": {{invoiceId}},\n  \"paymentDate\": \"2026-02-01\",\n  \"amount\": 500000.00,\n  \"paymentMethod\": \"CHEQUE\",\n  \"status\": \"PENDING\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments"
+          }
+        },
+        {
+          "name": "Search payments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments"],
+              "query": [
+                { "key": "invoiceId", "value": "{{invoiceId}}", "disabled": true },
+                { "key": "status", "value": "COMPLETED", "disabled": true },
+                { "key": "direction", "value": "INCOMING", "disabled": true },
+                { "key": "currencyCode", "value": "USD", "disabled": true },
+                { "key": "counterparty", "value": "Shell", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        { "name": "Get payment by id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}" } },
+        { "name": "Complete payment", "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}/complete" } },
+        {
+          "name": "Fail payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Returned by the bank - insufficient funds\"\n}" },
+            "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}/fail"
+          }
+        },
+        {
+          "name": "Reverse payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Payment applied to the wrong invoice\"\n}" },
+            "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}/reverse"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reconciliations",
+      "item": [
+        {
+          "name": "Run reconciliation for an invoice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('reconciliationId', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/reconciliations/invoice/{{invoiceId}}/run" }
+        },
+        {
+          "name": "Search reconciliations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reconciliations?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reconciliations"],
+              "query": [
+                { "key": "invoiceId", "value": "{{invoiceId}}", "disabled": true },
+                { "key": "status", "value": "UNDERPAID", "disabled": true },
+                { "key": "resolved", "value": "false", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        { "name": "List unresolved discrepancies", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/reconciliations/unresolved" } },
+        { "name": "Get reconciliation by id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/reconciliations/{{reconciliationId}}" } },
+        {
+          "name": "Resolve discrepancy",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolutionNotes\": \"Short payment of 150.00 written off as bank charges, approved by the Finance Manager\",\n  \"status\": \"MATCHED\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/reconciliations/{{reconciliationId}}/resolve"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alerts",
+      "item": [
+        {
+          "name": "Search alerts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts?acknowledged=false&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "alerts"],
+              "query": [
+                { "key": "alertType", "value": "OVERDUE_INVOICE", "disabled": true },
+                { "key": "severity", "value": "CRITICAL", "disabled": true },
+                { "key": "acknowledged", "value": "false" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        { "name": "Active overdue alerts", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/alerts/overdue" } },
+        { "name": "Acknowledge alert", "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/alerts/{{alertId}}/acknowledge" } }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        { "name": "Summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/dashboard/summary" } },
+        { "name": "Invoice status summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/dashboard/invoice-status" } },
+        { "name": "Payment summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/dashboard/payment-summary" } },
+        { "name": "Overdue summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/dashboard/overdue-summary" } },
+        { "name": "Reconciliation summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/dashboard/reconciliation-summary" } }
+      ]
+    },
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "Search audit logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/audit-logs?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "audit-logs"],
+              "query": [
+                { "key": "entityType", "value": "INVOICE", "disabled": true },
+                { "key": "action", "value": "PAYMENT_COMPLETED", "disabled": true },
+                { "key": "performedBy", "value": "finance", "disabled": true },
+                { "key": "performedAtFrom", "value": "2026-01-01", "disabled": true },
+                { "key": "performedAtTo", "value": "2026-12-31", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        { "name": "History of one record", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/audit-logs/INVOICE/{{invoiceId}}" } }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------------------
+# Test profile: in-memory H2 in MySQL compatibility mode, schema generated from
+# the JPA entities. The sample-data seeder and the overdue scheduler are both
+# switched off so every test starts from a deterministic, empty database.
+# ---------------------------------------------------------------------------
+spring:
+  datasource:
+    url: jdbc:h2:mem:settlement-test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  h2:
+    console:
+      enabled: false
+
+settlement:
+  seed-sample-data: false
+  overdue:
+    scheduling-enabled: false
+  security:
+    jwt:
+      secret: test-only-signing-secret-that-is-long-enough-for-hs256
+      expiration-minutes: 60
+
+logging:
+  level:
+    root: WARN
+    com.example.settlement: INFO
+    org.hibernate.SQL: WARN

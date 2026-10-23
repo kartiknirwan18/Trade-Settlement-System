@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: trade-settlement-system
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:mysql}
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+  mvc:
+    problemdetails:
+      enabled: false
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
+        one-indexed-parameters: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ---------------------------------------------------------------------------
+# Business configuration (all values are overridable through environment
+# variables so that no production value is baked into the artifact).
+# ---------------------------------------------------------------------------
+settlement:
+  invoice:
+    default-tax-percentage: ${SETTLEMENT_DEFAULT_TAX_PERCENTAGE:5.00}
+    default-payment-term-days: ${SETTLEMENT_PAYMENT_TERM_DAYS:30}
+    allow-multiple-invoices-per-trade: ${SETTLEMENT_ALLOW_MULTIPLE_INVOICES:false}
+    rounding-mode: HALF_UP
+    amount-scale: 2
+    tax-scale: 2
+  payment:
+    allow-overpayment: ${SETTLEMENT_ALLOW_OVERPAYMENT:false}
+  reconciliation:
+    tolerance-amount: ${SETTLEMENT_RECONCILIATION_TOLERANCE:0.01}
+    tolerance-percentage: 0.00
+  overdue:
+    scheduling-enabled: ${SETTLEMENT_OVERDUE_SCHEDULING_ENABLED:true}
+    cron: ${SETTLEMENT_OVERDUE_CRON:0 0 * * * *}
+    upcoming-due-days: ${SETTLEMENT_UPCOMING_DUE_DAYS:7}
+    high-severity-after-days: ${SETTLEMENT_HIGH_SEVERITY_AFTER_DAYS:30}
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+      expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+      issuer: trade-settlement-system
+  seed-sample-data: ${SETTLEMENT_SEED_SAMPLE_DATA:true}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  default-produces-media-type: application/json
+
+logging:
+  level:
+    root: INFO
+    com.example.settlement: INFO
+    org.hibernate.SQL: WARN

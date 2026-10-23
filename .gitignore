@@ -1,0 +1,30 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IDE ###
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Logs / runtime ###
+*.log
+logs/
+*.db
+
+### Secrets -- never commit real credentials ###
+.env
+.env.local
+*.pem
+*.jks
+*.p12
